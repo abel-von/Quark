@@ -1127,11 +1127,11 @@ impl Task {
 
     pub fn deliverSignalToHandler(&mut self, info: &SignalInfo, sigAct: &SigAct) -> Result<()> {
         let pt = self.GetPtRegs();
-        let mut userStack = Stack::New(pt.rsp - 128); // red zone
+        let mut userStack = Stack::New(pt.get_stack_pointer() - 128); // red zone
 
         if sigAct.flags.IsOnStack() && self.signalStack.IsEnable() {
             self.signalStack.SetOnStack();
-            if !self.signalStack.Contains(pt.rsp) {
+            if !self.signalStack.Contains(pt.get_stack_pointer()) {
                 userStack = Stack::New(self.signalStack.Top());
             }
         }
@@ -1200,15 +1200,19 @@ impl Task {
         let currTask = Task::Current();
         let regs = currTask.GetPtRegs();
         *regs = PtRegs::default();
-        regs.rsp = rsp;
-        regs.rcx = sigAct.handler;
-        regs.r11 = 0x2;
-        regs.rdi = signo;
-        regs.rsi = sigInfoAddr;
-        regs.rdx = sigCtxAddr;
-        regs.rax = 0;
-        regs.rip = regs.rcx;
-        regs.eflags = regs.r11;
+        #[cfg(target_arch = "x86_64")]
+        {
+            regs.rsp = rsp;
+            regs.rcx = sigAct.handler;
+            regs.r11 = 0x2;
+            regs.rdi = signo;
+            regs.rsi = sigInfoAddr;
+            regs.rdx = sigCtxAddr;
+            regs.rax = 0;
+            regs.rip = regs.rcx;
+            regs.eflags = regs.r11;
+        }
+
 
         return Ok(());
     }
@@ -1216,7 +1220,7 @@ impl Task {
     pub fn SignalReturn(&mut self, _rt: bool) -> Result<i64> {
         let pt = self.GetPtRegs();
 
-        let mut userStack = Stack::New(pt.rsp);
+        let mut userStack = Stack::New(pt.get_stack_pointer());
         let mut uc = UContext::default();
         userStack.PopType::<UContext>(self, &mut uc)?;
         let mut sigInfo = SignalInfo::default();

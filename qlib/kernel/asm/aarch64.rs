@@ -83,12 +83,17 @@ pub fn CurrentKernelTable() -> u64 {
 
 #[inline]
 pub fn EnterUser(entry: u64, userStackAddr: u64, kernelStackAddr: u64) -> ! {
-    unsafe {
-        asm!(
-            "nop"
-        );
-        panic!("won't reach");
-    }
+    let currTask = task::Task::Current();
+    let pt = currTask.GetPtRegs();
+    CPULocal::SetKernelStack(kernelStackAddr);
+    CPULocal::SetUserStack(userStackAddr);
+    *pt = Default::default();
+
+    pt.pc = entry;
+    pt.sp = userStackAddr;
+    pt.ss = 0x1b;
+
+    IRet(pt as *const _ as u64);
 }
 
 #[inline]

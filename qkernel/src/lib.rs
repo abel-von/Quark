@@ -564,6 +564,7 @@ fn StartRootContainer(_para: *const u8) -> ! {
     //CreateTask(StartExecProcess, ptr::null());
     let currTask = Task::Current();
     currTask.AccountTaskEnter(SchedState::RunningApp);
+    debug!("===============enter user, entry: {:x}, userStackAddr: {:x}, kernelStackAddr: {:x}", entry, userStackAddr, kernelStackAddr);
     EnterUser(entry, userStackAddr, kernelStackAddr);
 }
 
