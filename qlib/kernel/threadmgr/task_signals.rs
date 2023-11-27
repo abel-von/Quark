@@ -1217,6 +1217,7 @@ impl Task {
         return Ok(());
     }
 
+    #[cfg(target_arch = "x86_64")]
     pub fn SignalReturn(&mut self, _rt: bool) -> Result<i64> {
         let pt = self.GetPtRegs();
 
@@ -1257,6 +1258,12 @@ impl Task {
             t.lock().interruptSelf();
         }
 
+        return Err(Error::SysCallRetCtrl(TaskRunState::RunSyscallRet));
+    }
+
+    // TODO has to define a SignalRestore for each arch
+    #[cfg(target_arch = "aarch64")]
+    pub fn SignalReturn(&mut self, _rt: bool) -> Result<i64> {
         return Err(Error::SysCallRetCtrl(TaskRunState::RunSyscallRet));
     }
 }
